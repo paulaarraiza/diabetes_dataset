@@ -6,19 +6,62 @@ editor: visual
 
 ```{r}
 library(ggplot2)
-library(hrbrthemes)
 library(dplyr)
 library(tidyr)
-library(viridis)
 ```
 
 ```{r}
 diabete <- data.frame(read.csv("https://raw.githubusercontent.com/paulaarraiza/diabetes_dataset/main/diabetes_dataset.csv"))
-
+#change TG from character to numeric variable
+diabete$TG <- as.numeric(diabete$TG)
 ```
+
+```{r}
+#change gender to dummy variable, F = 1, M = 0
+diabete$Gender_Dummy <- ifelse(diabete$Gender == "F", 0, 1)
+```
+
+```{r}
+#calculate he number of diabetic, pre-diabetic, and non-diabetic patient
+sum(diabete$CLASS == "P"  )
+sum(diabete$CLASS == "N")
+sum(diabete$CLASS == "Y" )
+#number of female patient with, pre, without diabete
+sum(diabete$CLASS == "P" & diabete$Gender == "F" )
+sum(diabete$CLASS == "N" & diabete$Gender == "F")
+sum(diabete$CLASS == "Y" & diabete$Gender == "F")
+#number of male...
+sum(diabete$CLASS == "P" & diabete$Gender == "M" )
+sum(diabete$CLASS == "N" & diabete$Gender == "M")
+sum(diabete$CLASS == "Y" & diabete$Gender == "M")
+```
+
+
+```{r}
+#Summarize each variable
+ggplot(diabete, aes(x = Urea))+
+  geom_histogram()
+ggplot(diabete, aes(x = Cr))+
+  geom_histogram()
+ggplot(diabete, aes(x = Chol))+
+  geom_histogram()
+ggplot(diabete, aes(x = HDL))+
+  geom_histogram()
+ggplot(diabete, aes(x = LDL))+
+  geom_histogram()
+ggplot(diabete, aes(BMI))+
+  geom_histogram()
+ggplot(diabete, aes(x = TG))+
+  geom_histogram()
+```
+
 
 ```{r}
 ggplot(data=diabete, aes(x=HbA1c, group=Gender, fill=Gender)) +
     geom_density(adjust=1.5, alpha=.4)
+```
 
+```{r}
+ggplot(diabete, aes(y= TG, x = HbA1c, color=CLASS))+
+  geom_point()
 ```
