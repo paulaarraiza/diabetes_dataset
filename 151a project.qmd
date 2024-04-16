@@ -1,0 +1,24 @@
+---
+title: "Untitled"
+format: html
+editor: visual
+---
+
+```{r}
+library(ggplot2)
+library(hrbrthemes)
+library(dplyr)
+library(tidyr)
+library(viridis)
+```
+
+```{r}
+diabete <- data.frame(read.csv("https://raw.githubusercontent.com/paulaarraiza/diabetes_dataset/main/diabetes_dataset.csv"))
+
+```
+
+```{r}
+ggplot(data=diabete, aes(x=HbA1c, group=Gender, fill=Gender)) +
+    geom_density(adjust=1.5, alpha=.4)
+
+```
