@@ -22,6 +22,7 @@ diabete$Gender_Dummy <- ifelse(diabete$Gender == "F", 0, 1)
 ```
 
 ```{r}
+#2
 #calculate he number of diabetic, pre-diabetic, and non-diabetic patient
 sum(diabete$CLASS == "P"  )
 sum(diabete$CLASS == "N")
@@ -64,4 +65,11 @@ ggplot(data=diabete, aes(x=HbA1c, group=Gender, fill=Gender)) +
 ```{r}
 ggplot(diabete, aes(y= TG, x = HbA1c, color=CLASS))+
   geom_point()
+```
+
+```{r}
+#3.a
+regression_whole <- lm(HbA1c ~ AGE + Urea + Cr + Chol + TG + HDL + LDL + VLDL + BMI + Gender_Dummy, data = diabete)
+summary(regression_whole)
+plot(regression_whole)
 ```
