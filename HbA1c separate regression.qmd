@@ -1,0 +1,82 @@
+---
+title: "diabetes_regression"
+format: html
+editor: visual
+---
+
+## Run regression with HbA1c separately
+
+```{r}
+diabetes_df <- read.csv("/Users/eunicegu/Linear Modeling/project/Diabetes Dataset/Dataset of Diabetes .csv")
+head(diabetes_df)
+```
+
+```{r}
+#change TG from categorical data to numerical
+diabetes_df$TG <- as.numeric(diabetes_df$TG)
+#change gender to dummy variable, F = 1, M = 0
+diabetes_df$Gender_Dummy <- ifelse(diabetes_df$Gender == "F", 0, 1)
+# assign value to newly created NA 
+indices_to_change <- which(is.na(diabetes_df$TG))
+diabetes_df$TG[indices_to_change] <- 1.6
+```
+
+```{r}
+#HbA1c with AGE
+reg_1 <- lm(HbA1c ~ AGE, diabetes_df)
+print(summary(reg_1))
+```
+
+```{r}
+#HbA1c with Urea
+reg_2 <- lm(HbA1c ~ Urea, diabetes_df)
+print(summary(reg_2))
+```
+
+```{r}
+#HbA1c with Cr
+reg_3 <- lm(HbA1c ~ Cr, diabetes_df)
+print(summary(reg_3))
+```
+
+```{r}
+#HbA1c with Chol
+reg_4 <- lm(HbA1c ~ Chol, diabetes_df)
+print(summary(reg_4))
+```
+
+```{r}
+#HbA1c with TG
+reg_5 <- lm(HbA1c ~ TG, diabetes_df)
+print(summary(reg_5))
+```
+
+```{r}
+#HbA1c with HDL
+reg_6 <- lm(HbA1c ~ HDL, diabetes_df)
+print(summary(reg_6))
+```
+
+```{r}
+#HbA1c with LDL
+reg_7 <- lm(HbA1c ~ LDL, diabetes_df)
+print(summary(reg_7))
+```
+
+```{r}
+#HbA1c with VLDL
+reg_8 <- lm(HbA1c ~ VLDL, diabetes_df)
+print(summary(reg_8))
+```
+
+```{r}
+#HbA1c with BMI
+reg_9 <- lm(HbA1c ~ BMI, diabetes_df)
+print(summary(reg_9))
+```
+
+```{r}
+#HbA1c with Gender_Dummy
+reg_10 <- lm(HbA1c ~ Gender_Dummy, diabetes_df)
+print(summary(reg_10))
+```
