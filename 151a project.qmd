@@ -72,4 +72,5 @@ ggplot(diabete, aes(y= TG, x = HbA1c, color=CLASS))+
 regression_whole <- lm(HbA1c ~ AGE + Urea + Cr + Chol + TG + HDL + LDL + VLDL + BMI + Gender_Dummy, data = diabete)
 summary(regression_whole)
 plot(regression_whole)
+plot(HbA1c ~ AGE + Urea + Cr + Chol + TG + HDL + LDL + VLDL + BMI + Gender_Dummy, data = diabete)
 ```
