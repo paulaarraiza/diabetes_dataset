@@ -1,0 +1,228 @@
+---
+title: "diabetes_lasso"
+format: html
+editor: visual
+---
+
+```{r}
+library(dplyr)
+library(tidyverse)
+library(mvtnorm)
+library(magrittr)
+library(glmnet)
+library(sandwich)
+library(gridExtra)
+
+theme_update(text = element_text(size=24))
+options(repr.plot.width=12, repr.plot.height=6)
+```
+
+```{r}
+diabetes <- data.frame(read.csv("https://raw.githubusercontent.com/paulaarraiza/diabetes_dataset/main/diabetes_dataset.csv"))
+
+#change TG from character to numeric variable
+diabetes$TG <- as.numeric(diabetes$TG)
+
+#change gender to dummy variable, F = 1, M = 0
+diabetes$female <- ifelse(diabetes$Gender == "F", 1, 0)
+
+# Change NA introduced values
+indices_to_change <- which(is.na(diabetes$TG))
+diabetes$TG[indices_to_change] <- 1.6
+
+unique(diabetes$TG)
+```
+
+## Ridge and Lasso Optimization
+
+```{r}
+y_col <- "HbA1c"
+all_cols <- names(diabetes)  
+x_cols <- all_cols[!(all_cols %in% c("HbA1c", "Gender", "CLASS"))] 
+
+reg_form <- sprintf("%s ~ 1 + %s", y_col, paste(x_cols, collapse=" + ")) 
+print(reg_form)
+```
+
+```{r}
+set.seed(123)
+train_size <- 600
+train_indices <- sample(nrow(x), train_size)
+
+x <- model.matrix(formula(reg_form), diabetes)
+y <- diabetes$HbA1c
+
+x <- x[train_indices, ]
+y <- y[train_indices]
+
+x <- x[-train_indices, ]
+y <- y[-train_indices]
+```
+
+## Ridge Optimization
+
+```{r}
+lambda_seq <- seq(0, 9000, by = 50)
+
+ridge_results <- data.frame(Df = numeric(length(lambda_seq)),
+                      Dev = numeric(length(lambda_seq)),
+                      Lambda = lambda_seq)
+
+
+for (i in seq_along(lambda_seq)) {
+  lambda <- lambda_seq[i]
+
+  ridge_fit <- glmnet(x, y, alpha = 0, standardize = FALSE, lambda = lambda)
+  
+  ridge_results$Df[i] <- ridge_fit$df
+  ridge_results$Dev[i] <- ridge_fit$dev.ratio
+}
+
+print(ridge_results)
+```
+
+```{r}
+ggplot(ridge_results, aes(x = Lambda, y = Df)) +
+  geom_line() +
+  labs(x = "Lambda", y = "Degrees of Freedom",
+       title = "Degrees of Freedom vs. Lambda for Ridge Regression") +
+  theme(plot.title = element_text(size = 12),
+        axis.title.x = element_text(size = 10),
+        axis.text.x = element_text(size = 10),
+        axis.title.y = element_text(size = 10),
+        axis.text.y = element_text(size = 10))
+```
+
+## Lasso Optimization
+
+```{r}
+lambda_seq <- seq(0, 5, by = 0.1)
+
+lasso_results <- data.frame(Df = numeric(length(lambda_seq)),
+                      Dev = numeric(length(lambda_seq)),
+                      Lambda = lambda_seq)
+
+for (i in seq_along(lambda_seq)) {
+  lambda <- lambda_seq[i]
+  
+  lasso_fit <- glmnet(x, y, alpha = 1, standardize = FALSE, lambda = lambda)
+  
+  lasso_results$Lambda[i] <- lasso_fit$lambda
+  lasso_results$Df[i] <- lasso_fit$df
+  lasso_results$Dev[i] <- lasso_fit$dev.ratio
+}
+
+print(lasso_results)
+```
+
+```{r}
+ggplot(lasso_results, aes(x = Lambda, y = Df)) +
+  geom_line() +
+  labs(x = "Lambda", y = "Degrees of Freedom",
+       title = "Degrees of Freedom vs. Lambda for Lasso Regression") +
+  theme(plot.title = element_text(size = 12),
+        axis.title.x = element_text(size = 10),
+        axis.text.x = element_text(size = 10),
+        axis.title.y = element_text(size = 10),
+        axis.text.y = element_text(size = 10))
+```
+
+## Cross-Validation using glmnet
+
+```{r}
+n_folds <- 5
+lasso_cv_fit <- cv.glmnet(x, y, alpha=1, type.measure="mse", nfolds=n_folds)
+ridge_cv_fit <- cv.glmnet(x, y, alpha=0, type.measure="mse", nfolds=n_folds)
+```
+
+Since glmnet already has a cross-validation procedure integrated, we will be using that one. The results show the **average** values of (df, % explained deviation and lambda) for a given number of representative lambdas. These metrics are computed by averaging out the results obtained by all k-folds extracted from the data.
+
+**Ridge Regression results**
+
+```{r}
+lambda_values <- ridge_cv_fit$glmnet.fit$lambda
+df_values <- apply(ridge_cv_fit$glmnet.fit$beta != 0, 2, sum)
+
+# Create a dataframe
+ridge_results <- data.frame(Lambda = lambda_values, Df = df_values)
+
+ggplot(ridge_results, aes(x = Lambda, y = Df)) +
+  geom_line() +
+  labs(x = "Lambda", y = "Degrees of Freedom",
+       title = "Degrees of Freedom vs. Lambda for Lasso Regression") +
+  theme(plot.title = element_text(size = 12),
+        axis.title.x = element_text(size = 10),
+        axis.text.x = element_text(size = 10),
+        axis.title.y = element_text(size = 10),
+        axis.text.y = element_text(size = 10))
+```
+
+**Lasso Regression results**
+
+```{r}
+lambda_values <- lasso_cv_fit$glmnet.fit$lambda
+df_values <- apply(lasso_cv_fit$glmnet.fit$beta != 0, 2, sum)
+
+# Create a dataframe
+lasso_results <- data.frame(Lambda = lambda_values, Df = df_values)
+
+ggplot(lasso_results, aes(x = Lambda, y = Df)) +
+  geom_line() +
+  labs(x = "Lambda", y = "Degrees of Freedom",
+       title = "Degrees of Freedom vs. Lambda for Lasso Regression") +
+  theme(plot.title = element_text(size = 12),
+        axis.title.x = element_text(size = 10),
+        axis.text.x = element_text(size = 10),
+        axis.title.y = element_text(size = 10),
+        axis.text.y = element_text(size = 10))
+```
+
+**Question, why does it vary so much from the cross-validated example to the normal one?**
+
+Now we have a representation on how many regressors the Ridge and the Lasso method suggest us to include depending on how much we decide to penalize more variables in the equation. However, we aim to look at specific metrics to determine so. In particular, we would like to observe how RSS varies when changing the number of variables.
+
+```{r}
+for (n in 1:n_lambda) {
+  predictions <- predict(lasso_cv_fit, s = lasso_cv_fit$lambda[n], newx = x)
+  residuals <- y - predictions
+  degfreedom <- lasso_cv_fit$glmnet.fit$df[n]
+  rss <- sum(residuals^2)
+}
+```
+
+```{r}
+n_lambda <- length(lasso_cv_fit$lambda)
+result_table <- data.frame(lambda = numeric(n_lambda),
+                            degfreedom = numeric(n_lambda),
+                            rss = numeric(n_lambda))
+for (n in 1:n_lambda) {
+  predictions <- predict(lasso_cv_fit, s = lasso_cv_fit$lambda[n], newx = x)
+  residuals <- y - predictions
+  degfreedom <- lasso_cv_fit$glmnet.fit$df[n]
+  rss <- sum(residuals^2)
+  result_table[n, ] <- c(lambda = lasso_cv_fit$lambda[n],
+                         degfreedom = degfreedom,
+                         rss = rss)}
+print(result_table)
+```
+
+```{r}
+library(ggplot2)
+
+# Plot RSS vs. Lambda
+ggplot(result_table, aes(x = rss, y = degfreedom)) +
+  geom_line() +
+  labs(x = "Residual Sum of Squares (RSS)", y = "Degrees of Freedom",
+       title = "RSS vs. Degrees of Freedom for Lasso Regression") +
+  theme(plot.title = element_text(size = 12),
+        axis.title.x = element_text(size = 10),
+        axis.text.x = element_text(size = 10),
+        axis.title.y = element_text(size = 10),
+        axis.text.y = element_text(size = 10))
+```
+
+Questions left after this:
+
+-   I do not fully understand the mechanics behind how residuals are calculated.
+
+-   Does it tell us **which** coefficients to include?
