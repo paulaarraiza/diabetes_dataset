@@ -7,6 +7,7 @@ editor: visual
 ## Run regression with HbA1c separately
 
 ```{r}
+library(ggplot2)
 diabetes_df <- read.csv("/Users/eunicegu/Linear Modeling/project/Diabetes Dataset/Dataset of Diabetes .csv")
 head(diabetes_df)
 ```
@@ -21,62 +22,202 @@ indices_to_change <- which(is.na(diabetes_df$TG))
 diabetes_df$TG[indices_to_change] <- 1.6
 ```
 
+### HbA1c with AGE
 ```{r}
-#HbA1c with AGE
 reg_1 <- lm(HbA1c ~ AGE, diabetes_df)
 print(summary(reg_1))
 ```
 
 ```{r}
-#HbA1c with Urea
+ggplot(diabetes_df) + geom_point(aes(y=HbA1c, x=AGE))
+```
+
+```{r}
+ggplot(diabetes_df) + geom_density_2d_filled(aes(y=HbA1c, x=AGE))
+```
+
+```{r}
+ggplot(diabetes_df) +
+    geom_density_2d_filled(aes(y=HbA1c, x=AGE)) +
+    geom_line(aes(x=AGE, y=reg_1$fitted.values), color="red", linewidth=2)
+```
+
+### HbA1c with Urea
+```{r}
 reg_2 <- lm(HbA1c ~ Urea, diabetes_df)
 print(summary(reg_2))
 ```
 
 ```{r}
-#HbA1c with Cr
+ggplot(diabetes_df) + geom_point(aes(y=HbA1c, x=Urea))
+```
+
+```{r}
+ggplot(diabetes_df) + geom_density_2d_filled(aes(y=HbA1c, x=Urea))
+```
+
+```{r}
+ggplot(diabetes_df) +
+    geom_density_2d_filled(aes(y=HbA1c, x=Urea)) +
+    geom_line(aes(x=Urea, y=reg_2$fitted.values), color="red", linewidth=2)
+```
+
+### HbA1c with Cr
+```{r}
 reg_3 <- lm(HbA1c ~ Cr, diabetes_df)
 print(summary(reg_3))
 ```
 
 ```{r}
-#HbA1c with Chol
+ggplot(diabetes_df) + geom_point(aes(y=HbA1c, x=Cr))
+```
+
+```{r}
+ggplot(diabetes_df) + geom_density_2d_filled(aes(y=HbA1c, x=Cr))
+```
+
+```{r}
+ggplot(diabetes_df) +
+    geom_density_2d_filled(aes(y=HbA1c, x=Cr)) +
+    geom_line(aes(x=Cr, y=reg_3$fitted.values), color="red", linewidth=2)
+```
+
+### HbA1c with Chol
+```{r}
 reg_4 <- lm(HbA1c ~ Chol, diabetes_df)
 print(summary(reg_4))
 ```
 
 ```{r}
-#HbA1c with TG
+ggplot(diabetes_df) + geom_point(aes(y=HbA1c, x=Chol))
+```
+
+```{r}
+ggplot(diabetes_df) + geom_density_2d_filled(aes(y=HbA1c, x=Chol))
+```
+
+```{r}
+ggplot(diabetes_df) +
+    geom_density_2d_filled(aes(y=HbA1c, x=Chol)) +
+    geom_line(aes(x=Chol, y=reg_4$fitted.values), color="red", linewidth=2)
+```
+
+### HbA1c with TG
+```{r}
 reg_5 <- lm(HbA1c ~ TG, diabetes_df)
 print(summary(reg_5))
 ```
 
 ```{r}
-#HbA1c with HDL
+ggplot(diabetes_df) + geom_point(aes(y=HbA1c, x=TG))
+```
+
+```{r}
+ggplot(diabetes_df) + geom_density_2d_filled(aes(y=HbA1c, x=TG))
+```
+
+```{r}
+ggplot(diabetes_df) +
+    geom_density_2d_filled(aes(y=HbA1c, x=TG)) +
+    geom_line(aes(x=TG, y=reg_5$fitted.values), color="red", linewidth=2)
+```
+
+### HbA1c with HDL
+```{r}
 reg_6 <- lm(HbA1c ~ HDL, diabetes_df)
 print(summary(reg_6))
 ```
 
 ```{r}
-#HbA1c with LDL
+ggplot(diabetes_df) + geom_point(aes(y=HbA1c, x=HDL))
+```
+
+```{r}
+ggplot(diabetes_df) + geom_density_2d_filled(aes(y=HbA1c, x=HDL))
+```
+
+```{r}
+ggplot(diabetes_df) +
+    geom_density_2d_filled(aes(y=HbA1c, x=HDL)) +
+    geom_line(aes(x=HDL, y=reg_6$fitted.values), color="red", linewidth=2)
+```
+
+### HbA1c with LDL
+```{r}
 reg_7 <- lm(HbA1c ~ LDL, diabetes_df)
 print(summary(reg_7))
 ```
 
 ```{r}
-#HbA1c with VLDL
+ggplot(diabetes_df) + geom_point(aes(y=HbA1c, x=LDL))
+```
+
+```{r}
+ggplot(diabetes_df) + geom_density_2d_filled(aes(y=HbA1c, x=LDL))
+```
+
+```{r}
+ggplot(diabetes_df) +
+    geom_density_2d_filled(aes(y=HbA1c, x=LDL)) +
+    geom_line(aes(x=LDL, y=reg_7$fitted.values), color="red", linewidth=2)
+```
+
+### HbA1c with VLDL
+```{r}
 reg_8 <- lm(HbA1c ~ VLDL, diabetes_df)
 print(summary(reg_8))
 ```
 
 ```{r}
-#HbA1c with BMI
+ggplot(diabetes_df) + geom_point(aes(y=HbA1c, x=VLDL))
+```
+
+```{r}
+ggplot(diabetes_df) + geom_density_2d_filled(aes(y=HbA1c, x=VLDL))
+```
+
+```{r}
+ggplot(diabetes_df) +
+    geom_density_2d_filled(aes(y=HbA1c, x=VLDL)) +
+    geom_line(aes(x=VLDL, y=reg_8$fitted.values), color="red", linewidth=2)
+```
+
+### HbA1c with BMI
+```{r}
 reg_9 <- lm(HbA1c ~ BMI, diabetes_df)
 print(summary(reg_9))
 ```
 
 ```{r}
-#HbA1c with Gender_Dummy
+ggplot(diabetes_df) + geom_point(aes(y=HbA1c, x=BMI))
+```
+
+```{r}
+ggplot(diabetes_df) + geom_density_2d_filled(aes(y=HbA1c, x=BMI))
+```
+
+```{r}
+ggplot(diabetes_df) +
+    geom_density_2d_filled(aes(y=HbA1c, x=BMI)) +
+    geom_line(aes(x=BMI, y=reg_9$fitted.values), color="red", linewidth=2)
+```
+
+### HbA1c with Gender_Dummy
+```{r}
 reg_10 <- lm(HbA1c ~ Gender_Dummy, diabetes_df)
 print(summary(reg_10))
+```
+
+```{r}
+ggplot(diabetes_df) + geom_point(aes(y=HbA1c, x=Gender_Dummy))
+```
+
+```{r}
+ggplot(diabetes_df) + geom_density_2d_filled(aes(y=HbA1c, x=Gender_Dummy))
+```
+
+```{r}
+ggplot(diabetes_df) +
+    geom_density_2d_filled(aes(y=HbA1c, x=Gender_Dummy)) +
+    geom_line(aes(x=Gender_Dummy, y=reg_10$fitted.values), color="red", linewidth=2)
 ```
