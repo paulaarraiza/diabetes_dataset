@@ -1,0 +1,25 @@
+```
+{r}
+##do a train and test set 80%/20%
+set.seed(1)
+sample <- sample(c(TRUE, FALSE), nrow(diabetes), replace=TRUE, prob=c(0.8,0.2))
+train  <- diabetes[sample, ]
+test   <- diabetes[!sample, ]
+
+```
+{r}
+# Fit the model using the training data
+regression_whole <- lm(HbA1c ~ AGE + Urea + Cr + Chol + TG + HDL + LDL + VLDL + BMI + Gender_Dummy, data = train)
+# Predict HbA1c values using the test data
+predictions <- predict(regression_whole, newdata = test, interval = "prediction")
+
+# Extract the lower and upper bounds of the prediction intervals
+lower_bounds <- predictions[, "lwr"]
+upper_bounds <- predictions[, "upr"]
+
+# Check which data points fall into the prediction intervals
+in_interval <- test$HbA1c >= lower_bounds & test$HbA1c <= upper_bounds
+
+# Print the results
+summary(in_interval)
+```
