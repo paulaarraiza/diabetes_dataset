@@ -11,15 +11,18 @@ test   <- diabetes[!sample, ]
 # Fit the model using the training data
 regression_whole <- lm(HbA1c ~ AGE + Urea + Cr + Chol + TG + HDL + LDL + VLDL + BMI + Gender_Dummy, data = train)
 # Predict HbA1c values using the test data
-predictions <- predict(regression_whole, newdata = test, interval = "prediction")
+# Fit the model using the training data
+regression_whole <- lm(HbA1c ~ AGE + Urea + Cr + Chol + TG + HDL + LDL + VLDL + BMI + Gender_Dummy, data = train)
+# Predict HbA1c values using the test data
+test$predictions <- predict(regression_whole, newdata = test)
 
-# Extract the lower and upper bounds of the prediction intervals
-lower_bounds <- predictions[, "lwr"]
-upper_bounds <- predictions[, "upr"]
+# Create a categorical variable based on the predicted values
+categories <- cut(predictions, breaks = c(-Inf, 5.6, 6.4, Inf), labels = c("N", "P", "Y"))
 
-# Check which data points fall into the prediction intervals
-in_interval <- test$HbA1c >= lower_bounds & test$HbA1c <= upper_bounds
+# Add the categorical variable to the test data
+test$CLASS_pred <- categories
+
 
 # Print the results
-summary(in_interval)
+summary(test$CLASS == test$CLASS_pred)
 ```
