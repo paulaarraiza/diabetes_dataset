@@ -17,7 +17,7 @@ regression_whole <- lm(HbA1c ~ AGE + Urea + Cr + Chol + TG + HDL + LDL + VLDL + 
 test$predictions <- predict(regression_whole, newdata = test)
 
 # Create a categorical variable based on the predicted values
-categories <- cut(predictions, breaks = c(-Inf, 5.6, 6.4, Inf), labels = c("N", "P", "Y"))
+categories <- cut(test$predictions, breaks = c(-Inf, 5.6, 6.4, Inf), labels = c("N", "P", "Y"))
 
 # Add the categorical variable to the test data
 test$CLASS_pred <- categories
