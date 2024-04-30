@@ -26,3 +26,92 @@ test$CLASS_pred <- categories
 # Print the results
 summary(test$CLASS == test$CLASS_pred)
 ```
+
+
+```
+{r}
+
+# Set the seed for reproducibility
+set.seed(1201)
+
+# Create a vector to store the results
+accuracy <- numeric(100)
+
+# Repeat the process 10 times
+for (i in 1:100) {
+  # Split the dataset into training and test sets
+  sample <- sample(c(TRUE, FALSE), nrow(diabetes), replace=TRUE, prob=c(0.8,0.2))
+  train  <- diabetes[sample, ]
+  test   <- diabetes[!sample, ]
+  
+  # Fit the model using the training data
+  regression_whole <- lm(HbA1c ~ AGE + Urea + Cr + Chol + TG + HDL + LDL + VLDL + BMI + Gender_Dummy, data = train)
+  
+  # Predict HbA1c values using the test data
+  test$predictions <- predict(regression_whole, newdata = test)
+  
+  # Create a categorical variable based on the predicted values
+  categories <- cut(test$predictions, breaks = c(-Inf, 5.6, 6.5, Inf), labels = c("N", "P", "Y"))
+  
+  # Add the categorical variable to the test data
+  test$CLASS_pred <- categories
+  
+  # Calculate the accuracy of the predictions and store it in the vector
+  accuracy[i] <- sum(test$CLASS == test$CLASS_pred)/nrow(test)
+}
+
+# Print the results
+print(data.frame(accuracy))
+mean(accuracy)
+sd(accuracy)
+```
+
+
+```
+{r}
+# Set the seed for reproducibility
+set.seed(1201)
+
+# Create an empty data frame to store the results
+results_df <- data.frame(Model1 = numeric(1000), Model2 = numeric(1000))
+
+# Repeat the process ten times
+for (i in 1:1000) {
+  # Split the dataset into training and test sets
+  sample <- sample(c(TRUE, FALSE), nrow(diabetes), replace=TRUE, prob=c(0.8,0.2))
+  train  <- diabetes[sample, ]
+  test   <- diabetes[!sample, ]
+  
+  # Fit the first model using the training data
+  regression_whole1 <- lm(HbA1c ~ AGE + Urea + Cr + Chol + TG + HDL + LDL + VLDL + BMI + Gender_Dummy, data = train)
+  
+  # Predict HbA1c values using the test data for the first model
+  test$predictions1 <- predict(regression_whole1, newdata = test)
+  
+  # Create a categorical variable based on the predicted values for the first model
+  categories1 <- cut(test$predictions1, breaks = c(-Inf, 5.6, 6.5, Inf), labels = c("N", "P", "Y"))
+  
+  # Add the categorical variable to the test data for the first model
+  test$CLASS_pred1 <- categories1
+  
+  # Fit the second model using the training data
+  regression_whole2 <- lm(HbA1c ~  AGE + Chol  + BMI , data = train)
+  
+  # Predict HbA1c values using the test data for the second model
+  test$predictions2 <- predict(regression_whole2, newdata = test)
+  
+  # Create a categorical variable based on the predicted values for the second model
+  categories2 <- cut(test$predictions2, breaks = c(-Inf, 5.6, 6.5, Inf), labels = c("N", "P", "Y"))
+  
+  # Add the categorical variable to the test data for the second model
+  test$CLASS_pred2 <- categories2
+  
+  # Calculate the accuracy of the predictions for each model and store the result in the data frame
+  results_df[i, "Model1"] <- sum(test$CLASS == test$CLASS_pred1)/nrow(test)
+  results_df[i, "Model2"] <- sum(test$CLASS == test$CLASS_pred2)/nrow(test)
+}
+
+# Print the results data frame
+print(results_df)
+sum(results_df$Model1 < results_df$Model2)/1000
+```
