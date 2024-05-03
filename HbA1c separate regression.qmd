@@ -29,19 +29,40 @@ print(summary(reg_1))
 ```
 
 ```{r}
-ggplot(diabetes_df) + geom_point(aes(y=HbA1c, x=AGE))
+ggplot(diabetes_df) + 
+  geom_point(aes(y = HbA1c, x = AGE), size = 1) +
+  theme(axis.text = element_text(size = 8)) + 
+  theme(axis.title = element_text(size = 10))
 ```
 
 ```{r}
-ggplot(diabetes_df) + geom_density_2d_filled(aes(y=HbA1c, x=AGE))
+ggplot(diabetes_df) + 
+    geom_density_2d_filled(aes(y=HbA1c, x=AGE)) +
+    theme(axis.text = element_text(size = 8), 
+        axis.title = element_text(size = 10),
+        legend.text = element_text(size = 8),
+        legend.title = element_text(size = 10))
 ```
 
 ```{r}
 ggplot(diabetes_df) +
     geom_density_2d_filled(aes(y=HbA1c, x=AGE)) +
-    geom_line(aes(x=AGE, y=reg_1$fitted.values), color="red", linewidth=2)
+    geom_line(aes(x=AGE, y=reg_1$fitted.values), color="red", 
+    linewidth=1) +
+    theme(axis.text = element_text(size = 8), 
+      axis.title = element_text(size = 10),
+      legend.text = element_text(size = 8),
+      legend.title = element_text(size = 10))
 ```
-
+```{r}
+dens <- kde2d(diabetes_df$AGE, diabetes_df$HbA1c)
+p <- plot_ly(z = ~dens$z) %>%
+  add_surface(x = dens$x, y = dens$y) 
+p <- p %>% layout(scene = list(xaxis = list(title = "AGE"),
+                                yaxis = list(title = "HbA1c"),
+                                zaxis = list(title = "Density")))
+p
+```
 ### HbA1c with Urea
 ```{r}
 reg_2 <- lm(HbA1c ~ Urea, diabetes_df)
@@ -189,19 +210,41 @@ print(summary(reg_9))
 ```
 
 ```{r}
-ggplot(diabetes_df) + geom_point(aes(y=HbA1c, x=BMI))
+ggplot(diabetes_df) + 
+  geom_point(aes(y = HbA1c, x = BMI), size = 1) +
+  theme(axis.text = element_text(size = 8)) + 
+  theme(axis.title = element_text(size = 10)) 
 ```
 
 ```{r}
-ggplot(diabetes_df) + geom_density_2d_filled(aes(y=HbA1c, x=BMI))
+ggplot(diabetes_df) +
+  geom_density_2d_filled(aes(y=HbA1c, x=BMI)) +
+  theme(axis.text = element_text(size = 8), 
+        axis.title = element_text(size = 10),
+        legend.text = element_text(size = 8),
+        legend.title = element_text(size = 10))
 ```
 
 ```{r}
 ggplot(diabetes_df) +
     geom_density_2d_filled(aes(y=HbA1c, x=BMI)) +
-    geom_line(aes(x=BMI, y=reg_9$fitted.values), color="red", linewidth=2)
+    geom_line(aes(x=BMI, y=reg_9$fitted.values), color="red", 
+    linewidth=1) +
+    theme(axis.text = element_text(size = 8), 
+      axis.title = element_text(size = 10),
+      legend.text = element_text(size = 8),
+      legend.title = element_text(size = 10))
 ```
+```{r}
+dens <- kde2d(diabetes_df$BMI, diabetes_df$HbA1c)
+p <- plot_ly(z = ~dens$z) %>%
+  add_surface(x = dens$x, y = dens$y) 
 
+p <- p %>% layout(scene = list(xaxis = list(title = "BMI"),
+                                yaxis = list(title = "HbA1c"),
+                                zaxis = list(title = "Density")))
+p
+```
 ### HbA1c with female
 ```{r}
 reg_10 <- lm(HbA1c ~ female, diabetes_df)
@@ -209,15 +252,37 @@ print(summary(reg_10))
 ```
 
 ```{r}
-ggplot(diabetes_df) + geom_point(aes(y=HbA1c, x=female))
+ggplot(diabetes_df) + 
+  geom_point(aes(y = HbA1c, x = female), size = 1) +
+  theme(axis.text = element_text(size = 8)) + 
+  theme(axis.title = element_text(size = 10)) 
 ```
 
 ```{r}
-ggplot(diabetes_df) + geom_density_2d_filled(aes(y=HbA1c, x=female))
+ggplot(diabetes_df) +
+  geom_density_2d_filled(aes(y=HbA1c, x=female)) +
+  theme(axis.text = element_text(size = 8), 
+        axis.title = element_text(size = 10),
+        legend.text = element_text(size = 8),
+        legend.title = element_text(size = 10))
 ```
 
 ```{r}
 ggplot(diabetes_df) +
     geom_density_2d_filled(aes(y=HbA1c, x=female)) +
-    geom_line(aes(x=female, y=reg_10$fitted.values), color="red", linewidth=2)
+    geom_line(aes(x=female, y=reg_10$fitted.values), color="red", 
+    linewidth=1) +
+    theme(axis.text = element_text(size = 8), 
+      axis.title = element_text(size = 10),
+      legend.text = element_text(size = 8),
+      legend.title = element_text(size = 10))
+```
+```{r}
+dens <- kde2d(diabetes_df$female, diabetes_df$HbA1c)
+p <- plot_ly(z = ~dens$z) %>%
+  add_surface(x = dens$x, y = dens$y) 
+p <- p %>% layout(scene = list(xaxis = list(title = "female"),
+                                yaxis = list(title = "HbA1c"),
+                                zaxis = list(title = "Density")))
+p
 ```
