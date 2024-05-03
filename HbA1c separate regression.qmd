@@ -16,7 +16,7 @@ head(diabetes_df)
 #change TG from categorical data to numerical
 diabetes_df$TG <- as.numeric(diabetes_df$TG)
 #change gender to dummy variable, F = 1, M = 0
-diabetes_df$Gender_Dummy <- ifelse(diabetes_df$Gender == "F", 0, 1)
+diabetes_df$female <- ifelse(diabetes_df$Gender == "F", 1, 0)
 # assign value to newly created NA 
 indices_to_change <- which(is.na(diabetes_df$TG))
 diabetes_df$TG[indices_to_change] <- 1.6
@@ -202,22 +202,22 @@ ggplot(diabetes_df) +
     geom_line(aes(x=BMI, y=reg_9$fitted.values), color="red", linewidth=2)
 ```
 
-### HbA1c with Gender_Dummy
+### HbA1c with female
 ```{r}
-reg_10 <- lm(HbA1c ~ Gender_Dummy, diabetes_df)
+reg_10 <- lm(HbA1c ~ female, diabetes_df)
 print(summary(reg_10))
 ```
 
 ```{r}
-ggplot(diabetes_df) + geom_point(aes(y=HbA1c, x=Gender_Dummy))
+ggplot(diabetes_df) + geom_point(aes(y=HbA1c, x=female))
 ```
 
 ```{r}
-ggplot(diabetes_df) + geom_density_2d_filled(aes(y=HbA1c, x=Gender_Dummy))
+ggplot(diabetes_df) + geom_density_2d_filled(aes(y=HbA1c, x=female))
 ```
 
 ```{r}
 ggplot(diabetes_df) +
-    geom_density_2d_filled(aes(y=HbA1c, x=Gender_Dummy)) +
-    geom_line(aes(x=Gender_Dummy, y=reg_10$fitted.values), color="red", linewidth=2)
+    geom_density_2d_filled(aes(y=HbA1c, x=female)) +
+    geom_line(aes(x=female, y=reg_10$fitted.values), color="red", linewidth=2)
 ```
