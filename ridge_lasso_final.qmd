@@ -1,0 +1,203 @@
+---
+title: "ridge_lasso_tot"
+format: html
+editor: visual
+---
+
+## Ridge and Lasso - BMI and AGE
+
+```{r}
+rm(list = ls())
+```
+
+```{r}
+library(dplyr)
+library(tidyverse)
+library(mvtnorm)
+library(magrittr)
+library(glmnet)
+library(sandwich)
+library(gridExtra)
+```
+
+```{r}
+diabetes <- data.frame(read.csv("https://raw.githubusercontent.com/paulaarraiza/diabetes_dataset/main/diabetes_dataset.csv"))
+
+#change TG from character to numeric variable
+diabetes$TG <- as.numeric(diabetes$TG)
+
+#change gender to dummy variable, F = 1, M = 0
+diabetes$female <- ifelse(diabetes$Gender == "F", 1, 0)
+
+# Change NA introduced values
+indices_to_change <- which(is.na(diabetes$TG))
+diabetes$TG[indices_to_change] <- 1.6
+```
+
+**AGE - Ridge**
+
+```{r}
+y_col <- "HbA1c"
+p <- 10 # specify how many powers we will consider
+x_col <- "AGE"
+
+powers_p <- c(seq(1, p))
+
+x_cols_p <- c()
+for (power in powers_p) {x_cols_p <- c(x_cols_p, paste0(x_col, power))}
+x_reg_form_p <- paste(x_cols_p, collapse=" + ")
+
+reg_form <- sprintf("%s ~ 1 + %s", y_col, x_reg_form_p) 
+print(reg_form)
+```
+
+Generate dataframe in which columns are powers of AGE
+
+```{r}
+y <- diabetes$HbA1c
+x <- diabetes$AGE
+n_cols <- length(powers_p)
+x_p <- matrix(NA, nrow = length(x), ncol = n_cols)
+for (i in 1:n_cols) {x_p[, i] <- x^powers_p[i]}
+```
+
+```{r}
+
+lambda_seq <- seq(0, 9000, by = 50)
+
+ridge_results <- data.frame(Df = numeric(length(lambda_seq)),
+                      Dev = numeric(length(lambda_seq)),
+                      Lambda = lambda_seq)
+for (i in seq_along(lambda_seq)) {
+  lambda <- lambda_seq[i]
+
+  ridge_fit <- glmnet(x_p, y, alpha = 0, standardize = FALSE, lambda = lambda)
+  ridge_results$Df[i] <- ridge_fit$df
+  ridge_results$Dev[i] <- ridge_fit$dev.ratio
+}
+
+print(ridge_results)
+```
+
+```{r}
+ggplot(ridge_results, aes(x = Lambda, y = Df)) +
+  geom_line() +
+  labs(x = "Lambda", y = "Degrees of Freedom",
+       title = "Degrees of Freedom vs. Lambda for Ridge Regression") +
+  theme(plot.title = element_text(size = 12),
+        axis.title.x = element_text(size = 10),
+        axis.text.x = element_text(size = 10),
+        axis.title.y = element_text(size = 10),
+        axis.text.y = element_text(size = 10))
+```
+
+**AGE - Lasso results**
+
+```{r}
+lambda_seq <- seq(0, 500000000, by = 1000000)
+
+age_lasso_results <- data.frame(Df = numeric(length(lambda_seq)),
+                      Dev = numeric(length(lambda_seq)),
+                      Lambda = lambda_seq)
+
+for (i in seq_along(lambda_seq)) {
+  lambda <- lambda_seq[i]
+  
+  lasso_fit <- glmnet(x_p, y, alpha = 1, standardize = FALSE, lambda = lambda)
+  
+  age_lasso_results$Lambda[i] <- lasso_fit$lambda
+  age_lasso_results$Df[i] <- lasso_fit$df
+  age_lasso_results$Dev[i] <- lasso_fit$dev.ratio
+}
+
+print(age_lasso_results)
+```
+
+```{r}
+ggplot(age_lasso_results, aes(x = Lambda, y = Df)) +
+  geom_line() +
+  labs(x = "Lambda", y = "Degrees of Freedom",
+       title = "Degrees of Freedom vs. Lambda for Ridge Regression") +
+  theme(plot.title = element_text(size = 12),
+        axis.title.x = element_text(size = 10),
+        axis.text.x = element_text(size = 10),
+        axis.title.y = element_text(size = 10),
+        axis.text.y = element_text(size = 10))
+```
+
+BMI - Ridge
+
+```{r}
+y_col <- "HbA1c"
+k <- 10 # specify how many powers we will consider
+x_col <- "BMI"
+
+powers_k <- c(seq(1, k))
+
+x_cols_k <- c()
+for (power in powers_k) {x_cols_k <- c(x_cols_k, paste0(x_col, power))}
+x_reg_form_k <- paste(x_cols_k, collapse=" + ")
+
+reg_form <- sprintf("%s ~ 1 + %s", y_col, x_reg_form_k) 
+print(reg_form)
+```
+
+```{r}
+y <- diabetes$HbA1c
+x <- diabetes$BMI
+n_cols <- length(powers_k)
+x_k <- matrix(NA, nrow = length(x), ncol = n_cols)
+for (i in 1:n_cols) {x_k[, i] <- x^powers_k[i]}
+x_k
+```
+
+```{r}
+lambda_seq <- seq(0, 50000000, by = 1000000)
+
+ridge_results <- data.frame(Df = numeric(length(lambda_seq)),
+                      Dev = numeric(length(lambda_seq)),
+                      Lambda = lambda_seq)
+for (i in seq_along(lambda_seq)) {
+  lambda <- lambda_seq[i]
+
+  ridge_fit <- glmnet(x_k, y, alpha = 0, standardize = FALSE, lambda = lambda)
+  ridge_results$Df[i] <- ridge_fit$df
+  ridge_results$Dev[i] <- ridge_fit$dev.ratio
+}
+
+print(ridge_results)
+```
+
+**BMI - Lasso results**
+
+```{r}
+lambda_seq <- seq(0, 5000000, by = 10000)
+
+lasso_results <- data.frame(Df = numeric(length(lambda_seq)),
+                      Dev = numeric(length(lambda_seq)),
+                      Lambda = lambda_seq)
+
+for (i in seq_along(lambda_seq)) {
+  lambda <- lambda_seq[i]
+  
+  lasso_fit <- glmnet(x_k, y, alpha = 1, standardize = FALSE, lambda = lambda)
+  
+  lasso_results$Lambda[i] <- lasso_fit$lambda
+  lasso_results$Df[i] <- lasso_fit$df
+  lasso_results$Dev[i] <- lasso_fit$dev.ratio
+}
+
+print(lasso_results)
+```
+
+```{r}
+ggplot(lasso_results, aes(x = Lambda, y = Df)) +
+  geom_line() +
+  labs(x = "Lambda", y = "Degrees of Freedom",
+       title = "Degrees of Freedom vs. Lambda for Ridge Regression") +
+  theme(plot.title = element_text(size = 12),
+        axis.title.x = element_text(size = 10),
+        axis.text.x = element_text(size = 10),
+        axis.title.y = element_text(size = 10),
+        axis.text.y = element_text(size = 10))
+```
