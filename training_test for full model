@@ -9,10 +9,10 @@ test   <- diabetes[!sample, ]
 ```
 {r}
 # Fit the model using the training data
-regression_whole <- lm(HbA1c ~ AGE + Urea + Cr + Chol + TG + HDL + LDL + VLDL + BMI + Gender_Dummy, data = train)
+regression_whole <- lm(HbA1c ~ AGE + Urea + Cr + Chol + TG + HDL + LDL + VLDL + BMI + female, data = train)
 # Predict HbA1c values using the test data
 # Fit the model using the training data
-regression_whole <- lm(HbA1c ~ AGE + Urea + Cr + Chol + TG + HDL + LDL + VLDL + BMI + Gender_Dummy, data = train)
+regression_whole <- lm(HbA1c ~ AGE + Urea + Cr + Chol + TG + HDL + LDL + VLDL + BMI + female, data = train)
 # Predict HbA1c values using the test data
 test$predictions <- predict(regression_whole, newdata = test)
 
@@ -45,7 +45,7 @@ for (i in 1:100) {
   test   <- diabetes[!sample, ]
   
   # Fit the model using the training data
-  regression_whole <- lm(HbA1c ~ AGE + Urea + Cr + Chol + TG + HDL + LDL + VLDL + BMI + Gender_Dummy, data = train)
+  regression_whole <- lm(HbA1c ~ AGE + Urea + Cr + Chol + TG + HDL + LDL + VLDL + BMI + female, data = train)
   
   # Predict HbA1c values using the test data
   test$predictions <- predict(regression_whole, newdata = test)
@@ -83,7 +83,7 @@ for (i in 1:1000) {
   test   <- diabetes[!sample, ]
   
   # Fit the first model using the training data
-  regression_whole1 <- lm(HbA1c ~ AGE + Urea + Cr + Chol + TG + HDL + LDL + VLDL + BMI + Gender_Dummy, data = train)
+  regression_whole1 <- lm(HbA1c ~ AGE + Urea + Cr + Chol + TG + HDL + LDL + VLDL + BMI + female, data = train)
   
   # Predict HbA1c values using the test data for the first model
   test$predictions1 <- predict(regression_whole1, newdata = test)
