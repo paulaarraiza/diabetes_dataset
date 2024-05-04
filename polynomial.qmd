@@ -1,0 +1,61 @@
+---
+title: "polynomial_cross_validation"
+format: html
+editor: visual
+---
+
+```{r}
+library(ggplot2)
+library(tidyverse)
+library(sandwich)
+library(gridExtra)
+
+diabetes_df <- read.csv("/Users/eunicegu/Linear Modeling/project/Diabetes Dataset/Dataset of Diabetes .csv")
+head(diabetes_df)
+```
+
+```{r}
+#change TG from categorical data to numerical
+diabetes_df$TG <- as.numeric(diabetes_df$TG)
+#change gender to dummy variable, F = 1, M = 0
+diabetes_df$female <- ifelse(diabetes_df$Gender == "F", 1, 0)
+# assign value to newly created NA 
+indices_to_change <- which(is.na(diabetes_df$TG))
+diabetes_df$TG[indices_to_change] <- 1.6
+```
+
+```{r}
+library(caret)
+
+set.seed(123)
+
+sample <- sample(c(TRUE, FALSE), nrow(diabetes_df), replace=TRUE, prob=c(0.8,0.2))
+train_data  <- diabetes_df[sample, ]
+test_data   <- diabetes_df[!sample, ]
+```
+
+```{r}
+p_seq <- unique(c(1:15))
+mse_df <- data.frame(p = numeric(), mse = numeric(), var = numeric(), bias = numeric())
+
+for (p in p_seq) {
+  model <- lm(HbA1c ~ poly(BMI, p), train_data)
+  predicted <- predict(model, data.frame(BMI = test_data$BMI))
+  mse <- mean((predicted - test_data$HbA1c)^2)
+  var <- var(predicted)
+  bias <- mean(predicted) - mean(test_data$HbA1c)
+  metrics <- c(MSE = mse, VAR = var, BIAS = bias)
+  mse_df <- rbind(mse_df, c(p, metrics))
+}
+
+colnames(mse_df) <- c("p", "mse", "var", "bias")
+
+print(mse_df)
+```
+
+```{r}
+ggplot(mse_df, aes(x=p)) +
+    geom_line(aes(y=mse, color="MSE")) +
+    geom_line(aes(y=var, color="var")) +
+    geom_line(aes(y=bias, color="bias"))
+```
