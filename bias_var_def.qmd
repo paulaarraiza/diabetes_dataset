@@ -1,0 +1,135 @@
+---
+title: "bias_var_def"
+format: html
+editor: visual
+---
+
+## Bias Variance tradeoff
+
+```{r}
+rm(list =ls())
+```
+
+```{r}
+library(tidyverse)
+library(sandwich)
+library(gridExtra)
+```
+
+```{r}
+diabetes <- data.frame(read.csv("https://raw.githubusercontent.com/paulaarraiza/diabetes_dataset/main/diabetes_dataset.csv"))
+
+#change TG from character to numeric variable
+diabetes$TG <- as.numeric(diabetes$TG)
+
+#change gender to dummy variable, F = 1, M = 0
+diabetes$female <- ifelse(diabetes$Gender == "F", 1, 0)
+
+# Change NA introduced values
+indices_to_change <- which(is.na(diabetes$TG))
+diabetes$TG[indices_to_change] <- 1.6
+
+```
+
+**BMI**
+
+```{r}
+set.seed(1)
+sample <- sample(c(TRUE, FALSE), nrow(diabetes), replace=TRUE, prob=c(0.8,0.2))
+train  <- diabetes[sample, ]
+test   <- diabetes[!sample, ]
+
+p_seq <- unique(c(1:8))
+mse_df <- data.frame(p = numeric(), mse = numeric(), var = numeric(), bias2 = numeric())
+
+for (p in p_seq) {
+  lm_model <- lm(HbA1c ~ 1 + poly(BMI, p), data = train)
+  y_hat <- predict(lm_model, newdata = test)
+  y_hat_mean <- mean(y_hat)
+  y_true<- test$HbA1c
+  y_true_mean <- mean(test$HbA1c)
+  
+  y_hat_error <- y_hat - y_true
+  y_hat_disp <- y_hat - y_hat_mean
+  bias <- y_hat_mean - y_true_mean
+  
+  mse <- mean(y_hat_error^2)
+  var <- mean(y_hat_disp^2)
+  bias2 <- mean(bias^2)
+  
+  metrics <- c(MSE = mse, VAR = var, BIAS2 = bias2)
+  mse_df <- rbind(mse_df, c(p, metrics))
+}
+
+colnames(mse_df) <- c("p", "mse", "var", "bias2")
+
+print(mse_df)
+```
+
+```{r}
+ggplot(mse_df, aes(x = p)) +
+  geom_line(aes(y = mse, color = "MSE")) +
+  geom_line(aes(y = var, color = "var")) +
+  geom_line(aes(y = bias, color = "bias")) +
+  labs(color = "Metric", y = "Bias Variance - BMI")
+```
+
+```{r}
+your_plot_4 <- ggplot(mse_df, aes(x = p)) +
+  geom_line(aes(y = mse, color = "MSE")) +
+  geom_line(aes(y = var, color = "var")) +
+  geom_line(aes(y = bias, color = "bias")) +
+  labs(color = "Metric", y = "Bias Variance - BMI")
+
+ggsave("/Users/paulaarraizaarias/Documents/ucm/berkeley/second_semester/STAT_151A/Project/code/graphs/bias_var_bmi.pdf", plot = your_plot_4)
+```
+
+**AGE**
+
+```{r}
+
+p_seq <- unique(c(1:8))
+mse_df <- data.frame(p = numeric(), mse = numeric(), var = numeric(), bias2 = numeric())
+
+for (p in p_seq) {
+  lm_model <- lm(HbA1c ~ 1 + poly(AGE, p), data = train)
+  y_hat <- predict(lm_model, newdata = test)
+  y_hat_mean <- mean(y_hat)
+  y_true<- test$HbA1c
+  y_true_mean <- mean(test$HbA1c)
+  
+  y_hat_error <- y_hat - y_true
+  y_hat_disp <- y_hat - y_hat_mean
+  bias <- y_hat_mean - y_true_mean
+  
+  mse <- mean(y_hat_error^2)
+  var <- mean(y_hat_disp^2)
+  bias2 <- mean(bias^2)
+  
+  metrics <- c(MSE = mse, VAR = var, BIAS2 = bias2)
+  mse_df <- rbind(mse_df, c(p, metrics))
+}
+
+colnames(mse_df) <- c("p", "mse", "var", "bias2")
+
+print(mse_df)
+```
+
+```{r}
+ggplot(mse_df, aes(x = p)) +
+  geom_line(aes(y = mse, color = "MSE")) +
+  geom_line(aes(y = var, color = "var")) +
+  geom_line(aes(y = bias, color = "bias")) +
+  labs(color = "Metric", y = "Bias Variance - AGE")
+```
+
+```{r}
+
+your_plot_5 <- ggplot(mse_df, aes(x = p)) +
+  geom_line(aes(y = mse, color = "MSE")) +
+  geom_line(aes(y = var, color = "var")) +
+  geom_line(aes(y = bias, color = "bias")) +
+  labs(color = "Metric", y = "Bias Variance - AGE")
+
+ggsave("/Users/paulaarraizaarias/Documents/ucm/berkeley/second_semester/STAT_151A/Project/code/graphs/bias_var_age.pdf", plot = your_plot_5)
+```
