@@ -1,0 +1,576 @@
+---
+title: "All Code"
+format: html
+editor: visual
+---
+
+## Complete Code
+
+```{r}
+rm(list =ls())
+```
+
+```{r}
+library(plotly)
+library(MASS) 
+library(ggplot2)
+```
+
+**Description of the dataset and data preprocessing**
+
+```{r}
+diabetes <- data.frame(read.csv("https://raw.githubusercontent.com/paulaarraiza/diabetes_dataset/main/diabetes_dataset.csv"))
+
+#change TG from character to numeric variable
+diabetes$TG <- as.numeric(diabetes$TG)
+
+#change gender to dummy variable, F = 1, M = 0
+diabetes$female <- ifelse(diabetes$Gender == "F", 1, 0)
+
+# assign value to newly created NA 
+indices_to_change <- which(is.na(diabetes$TG))
+diabetes$TG[indices_to_change] <- 1.6
+```
+
+**Representation of patients across gender, age and BMI**
+
+```{r}
+# Calculate the number of female patients
+num_female <- sum(diabetes$Gender == "F")
+
+# Calculate the number of male patients
+num_male <- sum(diabetes$Gender == "M")
+
+# Calculate the number of diabetic, pre-diabetic, and non-diabetic patients
+num_pre_diabetic <- sum(diabetes$CLASS == "P")
+num_non_diabetic <- sum(diabetes$CLASS == "N")
+num_diabetic <- sum(diabetes$CLASS == "Y")
+
+# Calculate the number of female patients with, pre-diabetes, and without diabetes
+num_female_pre_diabetic <- sum(diabetes$CLASS == "P" & diabetes$Gender == "F")
+num_female_non_diabetic <- sum(diabetes$CLASS == "N" & diabetes$Gender == "F")
+num_female_diabetic <- sum(diabetes$CLASS == "Y" & diabetes$Gender == "F")
+
+# Calculate the number of male patients with, pre-diabetes, and without diabetes
+num_male_pre_diabetic <- sum(diabetes$CLASS == "P" & diabetes$Gender == "M")
+num_male_non_diabetic <- sum(diabetes$CLASS == "N" & diabetes$Gender == "M")
+num_male_diabetic <- sum(diabetes$CLASS == "Y" & diabetes$Gender == "M")
+
+# Create a data frame to display the data
+summary_table <- data.frame(
+  Gender = c("Female", "Male"),
+  Total = c(num_female, num_male),
+  Pre_diabetic = c(num_female_pre_diabetic, num_male_pre_diabetic),
+  Non_diabetic = c(num_female_non_diabetic, num_male_non_diabetic),
+  Diabetic = c(num_female_diabetic, num_male_diabetic)
+)
+
+# Print the summary table
+print(summary_table)
+```
+
+```{r}
+plot <- ggplot(data = diabetes, aes(x = HbA1c, y = BMI, color = CLASS)) +
+  geom_point() +
+  scale_color_discrete("yellow")
+
+plot
+
+# ggsave("/Users/paulaarraizaarias/Documents/ucm/berkeley/second_semester/STAT_151A/Project/code/graphs/bmi_density.pdf", plot, width = 6, height = 4, dpi = 300)
+```
+
+```{r}
+plot2 <- ggplot(data = diabetes, aes(x = HbA1c, y = AGE, color = CLASS)) +
+  geom_point() +
+  scale_color_discrete("yellow")
+
+plot2
+# ggsave("/Users/paulaarraizaarias/Documents/ucm/berkeley/second_semester/STAT_151A/Project/code/graphs/age_density.pdf", plot2, width = 6, height = 4, dpi = 300)
+```
+
+**t-test part**
+
+test preparation
+
+```{r}
+set.seed(1201)  
+      sample <- sample(c(TRUE, FALSE), nrow(diabetes), replace=TRUE, prob=c(0.8,0.2))
+      train  <- diabetes[sample, ]
+      test   <- diabetes[!sample, ]
+      
+predict_HbA1c <- function(data, model) {
+  # Predict HbA1c values using the provided model
+  predictions <- predict(model, newdata = data)
+  
+  # Create a categorical variable based on the predicted values
+  categories <- cut(predictions, breaks = c(-Inf, 5.6, 6.5, Inf), labels = c("N", "P", "Y"))
+  
+  # Add the predicted classes to the data
+  data$CLASS_pred <- categories
+  
+  return(data)
+}
+
+evaluate_model <- function(data) {
+  # Calculate the number of correct predictions
+  correct_predictions <- sum(data$CLASS == data$CLASS_pred)
+  
+  # Calculate the accuracy
+  accuracy <- correct_predictions / nrow(data)
+  
+  return(list(correct_predictions = correct_predictions, accuracy = accuracy))
+}
+```
+
+test model:
+
+```{r}
+full_model <-  lm(HbA1c ~ AGE + Urea + Cr + Chol + TG + HDL + LDL + VLDL + BMI + female, data = train)
+
+reduced_linear_model <- lm(HbA1c ~ AGE + BMI + female, data = train)
+```
+
+two function t test funciton
+
+```{r}
+run_t_test <- function(full_model, new_model, iterations) {
+  results_df <- data.frame(Model1 = numeric(iterations), Model2 = numeric(iterations))
+  
+  for (i in 1:iterations) {
+    set.seed(1201 + i)
+    sample <- sample(c(TRUE, FALSE), nrow(diabetes), replace=TRUE, prob=c(0.8,0.2))
+    train <- diabetes[sample, ]
+    test <- diabetes[!sample, ]
+    
+    # Predict HbA1c values using the test data for Model 1
+    test$predictions1 <- predict(full_model, newdata = test)
+    categories1 <- cut(test$predictions1, breaks = c(-Inf, 5.6, 6.5, Inf), labels = c("N", "P", "Y"))
+    test$CLASS_pred1 <- categories1
+    
+    # Predict HbA1c values using the test data for Model 2
+    test$predictions2 <- predict(new_model, newdata = test)
+    categories2 <- cut(test$predictions2, breaks = c(-Inf, 5.6, 6.5, Inf), labels = c("N", "P", "Y"))
+    test$CLASS_pred2 <- categories2
+    
+    # Calculate accuracy for each model
+    results_df[i, "Model1"] <- sum(test$CLASS == test$CLASS_pred1)/nrow(test)
+    results_df[i, "Model2"] <- sum(test$CLASS == test$CLASS_pred2)/nrow(test)
+  }
+  
+  # Calculate differences between two model
+  differences <- results_df$Model1 - results_df$Model2
+  
+  # Perform a one-sided paired t-test
+  t_test_result <- t.test(differences, alternative = "greater")
+  
+  return(t_test_result)
+}
+
+run_t_test(full_model, reduced_linear_model,1000)
+```
+
+**Comparison between Non Lab and Lab Model**
+
+```{r}
+evaluate_mean_accuracy_model <- function(models, model_names, iterations) {
+  results_df <- data.frame(Model = character(0), correct_predictions = numeric(0), accuracy = numeric(0), Iteration = numeric(0))
+  
+  for (j in 1:iterations) {
+   
+    for (i in 1:length(models)) {
+      model <- models[[i]]
+      model_name <- model_names[i]  
+      
+      
+      set.seed(1201 + j)  
+      sample <- sample(c(TRUE, FALSE), nrow(diabetes), replace=TRUE, prob=c(0.8,0.2))
+      train  <- diabetes[sample, ]
+      test   <- diabetes[!sample, ]
+      
+      # Predict HbA1c values using the test data
+      test <- predict_HbA1c(test, model)
+      
+     
+      evaluation <- evaluate_model(test)
+      
+      
+      results_df <- rbind(results_df, data.frame(Model = model_name, correct_predictions = evaluation$correct_predictions, accuracy = evaluation$accuracy, Iteration = j))
+    }
+  }
+  
+  # Calculate mean accuracy for each model
+  mean_accuracy <- aggregate(accuracy ~ Model, data = results_df, FUN = mean)
+  
+  # Calculate standard deviation of accuracy for each model
+  sd_accuracy <- aggregate(accuracy ~ Model, data = results_df, FUN = sd)
+  
+  return(list(mean_accuracy = mean_accuracy, sd_accuracy = sd_accuracy))
+}
+
+
+format_results <- function(mean_accuracy, sd_accuracy) {
+  formatted_results <- data.frame(
+    Model = mean_accuracy$Model,
+    Mean_Accuracy = mean_accuracy$accuracy,
+    SD_Accuracy = sd_accuracy$accuracy
+  )
+  return(formatted_results)
+}
+
+models <- list(full_model, reduced_linear_model)
+model_names <- c("Full Model", "Reduced Linear Model")
+
+result_df <- evaluate_mean_accuracy_model(models, model_names, 100)
+
+formatted_results <- format_results(result_df$mean_accuracy, result_df$sd_accuracy)
+print(formatted_results)
+
+```
+
+Two model accuracy generation
+
+```{r}
+model_accuracy_generation <- function(full_model, new_model, iterations) {
+  results_df <- data.frame(Model = character(0), correct_predictions = numeric(0), accuracy = numeric(0), Iteration = numeric(0))
+  
+  models <- list(full_model, new_model)
+  
+  for (j in 1:iterations) {
+   
+    for (i in 1:length(models)) {
+      model <- models[[i]]
+      
+      
+      set.seed(1201 + j)  
+      sample <- sample(c(TRUE, FALSE), nrow(diabetes), replace=TRUE, prob=c(0.8,0.2))
+      train  <- diabetes[sample, ]
+      test   <- diabetes[!sample, ]
+      
+      # Predict HbA1c values using the test data
+      test <- predict_HbA1c(test, model)
+      
+      # Evaluate the model
+      evaluation <- evaluate_model(test)
+      
+     
+      results_df <- rbind(results_df, data.frame(Model = paste0("Model", i), correct_predictions = evaluation$correct_predictions, accuracy = evaluation$accuracy, Iteration = j))
+    }
+  }
+  
+  return(results_df)
+}
+
+
+results_df <- model_accuracy_generation(full_model, reduced_linear_model,1000)
+```
+
+two model accuracy plot
+
+```{r}
+plot_density_accuracy <- function(results_df) {
+  density_plot <- ggplot(results_df, aes(x = accuracy, fill = Model)) +
+    geom_density(alpha = 0.5) +
+    labs(title = "Density Plot of Accuracy Over Iterations",
+         x = "Accuracy",
+         y = "Density",
+         fill = "Model") +
+    theme_minimal()
+  
+  return(density_plot)
+}
+
+plot_density_accuracy(results_df)
+```
+
+two model accuracy comparasion
+
+```{r}
+compare_accuracy <- function(full_model, new_model, iterations) {
+  results_df <- data.frame(Model1 = numeric(iterations), Model2 = numeric(iterations))
+  
+  for (i in 1:iterations) {
+    set.seed(1201 + i)
+    sample <- sample(c(TRUE, FALSE), nrow(diabetes), replace=TRUE, prob=c(0.8,0.2))
+    train <- diabetes[sample, ]
+    test <- diabetes[!sample, ]
+    
+    # Predict HbA1c values using the test data for Model 1
+    test$predictions1 <- predict(full_model, newdata = test)
+    categories1 <- cut(test$predictions1, breaks = c(-Inf, 5.6, 6.5, Inf), labels = c("N", "P", "Y"))
+    test$CLASS_pred1 <- categories1
+    
+    # Predict HbA1c values using the test data for Model 2
+    test$predictions2 <- predict(new_model, newdata = test)
+    categories2 <- cut(test$predictions2, breaks = c(-Inf, 5.6, 6.5, Inf), labels = c("N", "P", "Y"))
+    test$CLASS_pred2 <- categories2
+    
+   
+    results_df[i, "Model1"] <- sum(test$CLASS == test$CLASS_pred1)/nrow(test)
+    results_df[i, "Model2"] <- sum(test$CLASS == test$CLASS_pred2)/nrow(test)
+  }
+  
+    accracy_percent <- sum((results_df$Model1 <= results_df$Model2)/iterations)
+  
+  return(accracy_percent)
+}
+
+compare_accuracy(full_model, reduced_linear_model, 1000)
+```
+
+**Polynomial Visual Evidence**
+
+Visual plot for age
+
+```{r}
+reg_1 <- lm(HbA1c ~ 1 + AGE, diabetes)
+print(summary(reg_1))
+
+your_plot <-ggplot(diabetes) +
+    geom_density_2d_filled(aes(y=HbA1c, x=AGE)) +
+    geom_line(aes(x=AGE, y=reg_1$fitted.values), color="red", 
+    linewidth=1) +
+    theme(axis.text = element_text(size = 8), 
+      axis.title = element_text(size = 10),
+      legend.text = element_text(size = 8),
+      legend.title = element_text(size = 10))
+```
+
+Visual plot for BMI
+
+```{r}
+reg_9 <- lm(HbA1c ~ 1 + BMI, diabetes)
+print(summary(reg_9))
+```
+
+```{r}
+your_plot_2 <- ggplot(diabetes) +
+    geom_density_2d_filled(aes(y=HbA1c, x=BMI)) +
+    geom_line(aes(x=BMI, y=reg_9$fitted.values), color="red", 
+    linewidth=1) +
+    theme(axis.text = element_text(size = 8), 
+      axis.title = element_text(size = 10),
+      legend.text = element_text(size = 8),
+      legend.title = element_text(size = 10))
+```
+
+**Polynomial Model: Accuracy levels**
+
+```{r}
+set.seed(1)
+sample <- sample(c(TRUE, FALSE), nrow(diabetes), replace=TRUE, prob=c(0.8,0.2))
+train  <- diabetes[sample, ]
+test   <- diabetes[!sample, ]
+```
+
+```{r}
+max_p <- 20 # for AGE
+max_k <- 20 # for BMI
+rsq_results_matrix <- matrix(nrow = max_p, ncol = max_k)
+
+for (p in 1:max_p) {
+  for (k in 1:max_k) {
+    
+    lm_model <- lm(HbA1c ~ 1 + poly(AGE, p, raw=TRUE) + poly(BMI, k, raw=TRUE) + female, data = train)
+    test$predictions <- predict(lm_model, newdata = test)
+  
+    categories <- cut(test$predictions, breaks = c(-Inf, 5.6, 6.5, Inf), labels = c("N", "P", "Y"))
+    
+    test$CLASS_pred <- categories
+    rsq_results_matrix[p, k] <- sum(test$CLASS == test$CLASS_pred)/nrow(test)
+  }
+  }
+  
+rsq_results_df <- as.data.frame(rsq_results_matrix)
+
+row.names(rsq_results_df) <- 1:max_p
+colnames(rsq_results_df) <- 1:max_k
+rsq_results_df
+```
+
+```{r}
+rsq_results_df$p <- row.names(rsq_results_df)
+
+# Reshape the dataframe to long format
+rsq_results_long <- reshape2::melt(rsq_results_df, id.vars = "p", variable.name = "k", value.name = "accuracy")
+
+# Convert character columns to numeric
+rsq_results_long$p <- as.numeric(rsq_results_long$p)
+rsq_results_long$k <- as.numeric(rsq_results_long$k)
+
+# Plot the heatmap
+your_plot_3 <- ggplot(rsq_results_long, aes(x = k, y = p, fill = accuracy)) +
+  geom_tile() +
+  scale_fill_gradient(low = "yellow", high = "blue") +
+  labs(x = "Degree of BMI", y = "Degree of AGE", fill = "Accuracy") +
+  theme_minimal()
+```
+
+**Variance Bias Tradeoff**
+
+BMI
+
+```{r}
+set.seed(1)
+sample <- sample(c(TRUE, FALSE), nrow(diabetes), replace=TRUE, prob=c(0.8,0.2))
+train  <- diabetes[sample, ]
+test   <- diabetes[!sample, ]
+
+max_p <- 8
+
+p_seq <- unique(c(1:max_p))
+mse_df <- data.frame(p = numeric(), mse = numeric(), var = numeric(), bias2 = numeric())
+
+for (p in p_seq) {
+  lm_model <- lm(HbA1c ~ 1 + poly(BMI, p, raw=TRUE), data = train)
+  y_hat <- predict(lm_model, newdata = test)
+  y_hat_mean <- mean(y_hat)
+  y_true<- test$HbA1c
+  y_true_mean <- mean(test$HbA1c)
+  
+  y_hat_error <- y_hat - y_true
+  y_hat_disp <- y_hat - y_hat_mean
+  bias <- y_hat_mean - y_true_mean
+  
+  mse <- mean(y_hat_error^2)
+  var <- mean(y_hat_disp^2)
+  bias2 <- mean(bias^2)
+  
+  metrics <- c(MSE = mse, VAR = var, BIAS2 = bias2)
+  mse_df <- rbind(mse_df, c(p, metrics))
+}
+
+colnames(mse_df) <- c("p", "mse", "var", "bias2")
+
+print(mse_df)
+```
+
+```{r}
+ggplot(mse_df, aes(x = p)) +
+  geom_line(aes(y = mse, color = "MSE")) +
+  geom_line(aes(y = var, color = "var")) +
+  geom_line(aes(y = bias, color = "bias")) +
+  labs(color = "Metric", y = "Bias Variance - BMI")
+```
+
+AGE
+
+```{r}
+max_p <- 8
+p_seq <- unique(c(1:max_p))
+mse_df <- data.frame(p = numeric(), mse = numeric(), var = numeric(), bias2 = numeric())
+
+for (p in p_seq) {
+  lm_model <- lm(HbA1c ~ 1 + poly(AGE, p, raw=TRUE), data = train)
+  y_hat <- predict(lm_model, newdata = test)
+  y_hat_mean <- mean(y_hat)
+  y_true<- test$HbA1c
+  y_true_mean <- mean(test$HbA1c)
+  
+  y_hat_error <- y_hat - y_true
+  y_hat_disp <- y_hat - y_hat_mean
+  bias <- y_hat_mean - y_true_mean
+  
+  mse <- mean(y_hat_error^2)
+  var <- mean(y_hat_disp^2)
+  bias2 <- mean(bias^2)
+  
+  metrics <- c(MSE = mse, VAR = var, BIAS2 = bias2)
+  mse_df <- rbind(mse_df, c(p, metrics))
+}
+
+colnames(mse_df) <- c("p", "mse", "var", "bias2")
+
+print(mse_df)
+```
+
+```{r}
+ggplot(mse_df, aes(x = p)) +
+  geom_line(aes(y = mse, color = "MSE")) +
+  geom_line(aes(y = var, color = "var")) +
+  geom_line(aes(y = bias, color = "bias")) +
+  labs(color = "Metric", y = "Bias Variance - AGE")
+```
+
+**Test results**
+
+```{r}
+set.seed(1201)
+
+results_df <- data.frame(LabModel = numeric(1000), NonLabModel_1_3 = numeric(1000), NonLabModel_3_6 = numeric(1000))
+for (i in 1:1000) {
+
+  sample <- sample(c(TRUE, FALSE), nrow(diabetes), replace=TRUE, prob=c(0.8,0.2))
+  train  <- diabetes[sample, ]
+  test   <- diabetes[!sample, ]
+  
+  regression_whole1 <- lm(HbA1c ~ 1+ AGE + Urea + Cr + Chol + TG + HDL + LDL + VLDL + BMI + female, data = train)
+  
+  test$predictions1 <- predict(regression_whole1, newdata = test)
+  
+  categories1 <- cut(test$predictions1, breaks = c(-Inf, 5.6, 6.5, Inf), labels = c("N", "P", "Y"))
+  
+  test$CLASS_pred1 <- categories1
+
+  regression_whole2 <- lm(HbA1c ~  1 + female + AGE + poly(BMI, 3) , data = train)
+
+  test$predictions2 <- predict(regression_whole2, newdata = test)
+  
+  categories2 <- cut(test$predictions2, breaks = c(-Inf, 5.6, 6.5, Inf), labels = c("N", "P", "Y"))
+  
+  test$CLASS_pred2 <- categories2
+  
+  regression_whole3 <- lm(HbA1c ~  1 + female + poly(AGE, 3) + poly(BMI, 6) , data = train)
+
+  test$predictions3 <- predict(regression_whole3, newdata = test)
+  
+  categories3 <- cut(test$predictions3, breaks = c(-Inf, 5.6, 6.5, Inf), labels = c("N", "P", "Y"))
+  
+  test$CLASS_pred3 <- categories3
+  
+  results_df[i, "LabModel"] <- sum(test$CLASS == test$CLASS_pred1)/nrow(test)
+  results_df[i, "NonLabModel_1_3"] <- sum(test$CLASS == test$CLASS_pred2)/nrow(test)
+  results_df[i, "NonLabModel_3_6"] <- sum(test$CLASS == test$CLASS_pred3)/nrow(test)
+}
+
+print(results_df)
+sum(results_df$LabModel < results_df$NonLabModel_1_3)/1000
+sum(results_df$NonLabModel_1_3 < results_df$NonLabModel_3_6)/1000
+sum(results_df$LabModel < results_df$NonLabModel_3_6)/1000
+```
+
+Check variance of coefficients
+
+```{r}
+coefficients1 <- list()
+coefficients2 <- list()
+coefficients3 <- list()
+
+for (i in 1:1000) {
+
+  sample <- sample(c(TRUE, FALSE), nrow(diabetes), replace=TRUE, prob=c(0.8,0.2))
+  train  <- diabetes[sample, ]
+  test   <- diabetes[!sample, ]
+  
+  regression_whole1 <- lm(HbA1c ~ 1+ AGE + Urea + Cr + Chol + TG + HDL + LDL + VLDL + BMI + female, data = train)
+  coefficients1[[i]] <- coefficients(regression_whole1)
+  
+  regression_whole2 <- lm(HbA1c ~  1 + female + AGE + poly(BMI, 3) , data = train)
+  coefficients2[[i]] <- coefficients(regression_whole2)
+  
+  regression_whole3 <- lm(HbA1c ~  1 + female + poly(AGE, 3) + poly(BMI, 6) , data = train)
+  coefficients3[[i]] <- coefficients(regression_whole3)
+}
+
+coefficients_df1 <- do.call(rbind, coefficients1)
+coefficients_df2 <- do.call(rbind, coefficients2)
+coefficients_df3 <- do.call(rbind, coefficients3)
+
+variance1 <- apply(coefficients_df1, 2, var)
+variance2 <- apply(coefficients_df2, 2, var)
+variance3 <- apply(coefficients_df3, 2, var)
+
+print(variance1)
+print(variance2)
+print(variance3)
+
+```
